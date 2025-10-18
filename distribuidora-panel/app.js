@@ -120,8 +120,42 @@
                 </div>
             );
         };
+
+        const LogsModal = ({ logs, pedidoId, onClose }) => {
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b">
+                            <h2 className="text-xl font-bold text-gray-800">Historial del Pedido #{pedidoId}</h2>
+                            <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600"><CloseIcon /></button>
+                        </div>
+                        <div className="p-6 overflow-y-auto">
+                            {logs.length > 0 ? (
+                                <ul className="space-y-4">
+                                    {logs.map(log => (
+                                        <li key={log.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            <div className="flex justify-between items-center text-sm">
+                                                <p className="font-bold text-gray-800">{log.nombre_usuario}</p>
+                                                <p className="text-gray-500">{new Date(log.fecha_creacion).toLocaleString()}</p>
+                                            </div>
+                                            <p className="mt-1 text-sm text-gray-700"><span className="font-semibold capitalize">{log.accion.replace(/_/g, ' ')}:</span> {log.detalle}</p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-center text-gray-500 py-8">No hay historial de cambios para este pedido.</p>
+                            )}
+                        </div>
+                        <div className="p-4 border-t bg-gray-50 flex justify-end">
+                            <button type="button" onClick={onClose} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         
-                const PedidoDetailModal = ({ pedidoId, onClose, user, onUpdate }) => {
+            const PedidoDetailModal = ({ pedidoId, onClose, user, onUpdate }) => {
             const [pedido, setPedido] = React.useState(null);
             const [loading, setLoading] = React.useState(true);
             const [error, setError] = React.useState(null);
@@ -319,6 +353,7 @@
 
             return (
                 <React.Fragment>
+                    {showLogs && <LogsModal logs={logs} pedidoId={pedidoId} onClose={() => setShowLogs(false)} />}
                     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
                         <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-3">
