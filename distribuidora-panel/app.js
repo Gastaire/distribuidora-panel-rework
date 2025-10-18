@@ -289,6 +289,34 @@
             const estadosDisponibles = isAdmin ? { pendiente: 'Pendiente', visto: 'Visto', en_preparacion: 'En Preparación', facturado: 'Facturado', listo_para_entrega: 'Listo p/ Entrega', entregado: 'Entregado', cancelado: 'Cancelado' } : { pendiente: 'Pendiente', visto: 'Visto', en_preparacion: 'En Preparación', listo_para_entrega: 'Listo p/ Entrega', entregado: 'Entregado' };
             const filteredProductsToAdd = allProducts.filter(p => productSearch && p.nombre.toLowerCase().includes(productSearch.toLowerCase()) && !editableItems.some(item => item.producto_id === p.id)).slice(0, 5);
             
+            const renderItem = (item) => {
+                const itemId = item.id || item.producto_id;
+                const subtotal = (item.cantidad * item.precio_congelado).toFixed(2);
+                return (
+                    <>
+                        <div className="flex-grow">
+                            <p className={`text-sm font-medium text-gray-800 ${integrityIssues.some(i => i.includes(`ID: ${item.producto_id}`)) ? 'text-red-600' : ''}`}>
+                                {item.aviso_faltante && <WarningIcon className="h-4 w-4 text-yellow-500 mr-2 inline" title="Producto sin stock al momento del pedido" />}
+                                {item.nombre_producto}
+                            </p>
+                            {!isEditing && <p className="text-sm text-gray-500">Cant: {item.cantidad}</p>}
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {isEditing ? (
+                                <input type="number" step="0.001" value={item.cantidad} onChange={(e) => handleQuantityChange(itemId, e.target.value)} className="w-24 text-center border rounded-md py-1"/>
+                            ) : (
+                                <p className="text-sm font-semibold text-gray-900">${subtotal}</p>
+                            )}
+                            {isEditing && (
+                                <button onClick={() => handleRemoveItem(itemId)} className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100">
+                                    <TrashIcon className="h-5 w-5" />
+                                </button>
+                            )}
+                        </div>
+                    </>
+                );
+            };
+
             return (
                 <React.Fragment>
                     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
@@ -313,7 +341,10 @@
                                         <div><h3 className="font-bold text-gray-800 mb-2">Información del Pedido</h3><p className="text-gray-600">Vendedor: <span className="font-semibold">{pedido.nombre_vendedor}</span></p><p className="text-gray-600">Fecha: <span className="font-semibold">{new Date(pedido.fecha_creacion).toLocaleString()}</span></p><p className="text-gray-600 flex items-center">Estado actual: <span className="ml-2"><EstadoBadge estado={pedido.estado}/></span></p></div>
                                     </div>
                                     <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-gray-800">Items del Pedido</h3>{isAdmin && !isEditing && (<button onClick={() => setIsEditing(true)} className="bg-blue-100 text-blue-800 text-xs font-bold py-1 px-3 rounded-full">Editar Pedido</button>)}</div>
-                                    <div className="border rounded-lg overflow-hidden mb-4">
+                                    
+                                    {/* --- INICIO DE LA MODIFICACIÓN RESPONSIVE --- */}
+                                    {/* Vista de Tabla para Escritorio */}
+                                    <div className="hidden md:block border rounded-lg overflow-hidden mb-4">
                                         <table className="min-w-full">
                                             <thead className="bg-gray-50 text-xs uppercase">
                                                 <tr>
@@ -323,112 +354,63 @@
                                                     {isEditing && <th className="px-4 py-2 text-right"></th>}
                                                 </tr>
                                             </thead>
-                                    
                                             <tbody className="divide-y">
-                                                {/* --- MODIFICACIÓN: Usar la lista ordenada --- */}
                                                 {sortedEditableItems.map(item => (
-                                                    <tr
-                                                        key={item.id || item.producto_id}
-                                                        className={integrityIssues.some(i => i.includes(`ID: ${item.producto_id}`)) ? 'bg-red-50' : ''}
-                                                    >
-                                                        <td className="px-4 py-2 text-sm flex items-center">
-                                                            {item.aviso_faltante && (
-                                                                <WarningIcon
-                                                                    className="h-4 w-4 text-yellow-500 mr-2"
-                                                                    title="Producto sin stock al momento del pedido"
-                                                                />
-                                                            )}
+                                                    <tr key={item.id || item.producto_id} className={integrityIssues.some(i => i.includes(`ID: ${item.producto_id}`)) ? 'bg-red-50' : ''}>
+                                                        <td className="px-4 py-3 text-sm flex items-center">
+                                                            {item.aviso_faltante && <WarningIcon className="h-4 w-4 text-yellow-500 mr-2" title="Producto sin stock al momento del pedido"/>}
                                                             {item.nombre_producto}
                                                         </td>
-                                                        <td className="px-4 py-2 text-center text-sm">
-                                                            {isEditing ? (
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.001"
-                                                                    value={item.cantidad}
-                                                                    onChange={(e) =>
-                                                                        handleQuantityChange(item.id || item.producto_id, e.target.value)
-                                                                    }
-                                                                    className="w-20 text-center border rounded-md"
-                                                                />
-                                                            ) : (
-                                                                item.cantidad
-                                                            )}
+                                                        <td className="px-4 py-3 text-center text-sm">
+                                                            {isEditing ? <input type="number" step="0.001" value={item.cantidad} onChange={(e) => handleQuantityChange(item.id || item.producto_id, e.target.value)} className="w-20 text-center border rounded-md"/> : item.cantidad}
                                                         </td>
-                                                        <td className="px-4 py-2 text-right text-sm font-semibold">
-                                                            ${(item.cantidad * item.precio_congelado).toFixed(2)}
-                                                        </td>
-                                                        {isEditing && (
-                                                            <td className="px-4 py-2 text-right">
-                                                                <button
-                                                                    onClick={() => handleRemoveItem(item.id || item.producto_id)}
-                                                                    className="text-red-500 hover:text-red-700"
-                                                                >
-                                                                    <TrashIcon className="h-5 w-5" />
-                                                                </button>
-                                                            </td>
-                                                        )}
+                                                        <td className="px-4 py-3 text-right text-sm font-semibold">${(item.cantidad * item.precio_congelado).toFixed(2)}</td>
+                                                        {isEditing && <td className="px-4 py-3 text-right"><button onClick={() => handleRemoveItem(item.id || item.producto_id)} className="text-red-500 hover:text-red-700"><TrashIcon className="h-5 w-5" /></button></td>}
                                                     </tr>
                                                 ))}
                                             </tbody>
-                                    
                                             {!isEditing && (
                                                 <tfoot className="bg-gray-50 font-bold">
                                                     <tr>
                                                         <td colSpan="2" className="px-4 py-2 text-right">Total:</td>
                                                         <td className="px-4 py-2 text-right">${totalPedido.toFixed(2)}</td>
-                                                        {isEditing && <td></td>}
                                                     </tr>
                                                 </tfoot>
                                             )}
                                         </table>
                                     </div>
                                     
-                                    {/* --- SECCIÓN DE EDICIÓN --- */}
+                                    {/* Vista de Tarjetas para Móvil */}
+                                    <div className="md:hidden space-y-3 mb-4">
+                                        {sortedEditableItems.map(item => (
+                                            <div key={item.id || item.producto_id} className={`bg-white rounded-lg border p-3 flex items-center justify-between ${integrityIssues.some(i => i.includes(`ID: ${item.producto_id}`)) ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
+                                                {renderItem(item)}
+                                            </div>
+                                        ))}
+                                        {!isEditing && (
+                                            <div className="bg-gray-50 rounded-lg p-3 flex justify-between items-center font-bold text-gray-800">
+                                                <span>Total:</span>
+                                                <span>${totalPedido.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* --- FIN DE LA MODIFICACIÓN RESPONSIVE --- */}
+
                                     {isEditing && (
                                         <div className="space-y-4">
-                                            {/* Buscador de productos */}
                                             <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    value={productSearch}
-                                                    onChange={(e) => setProductSearch(e.target.value)}
-                                                    placeholder="Buscar producto para agregar..."
-                                                    className="w-full p-2 border rounded-md"
-                                                />
+                                                <input type="text" value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Buscar producto para agregar..." className="w-full p-2 border rounded-md"/>
                                                 {productSearch && (
                                                     <div className="absolute bg-white border shadow-lg max-h-48 overflow-y-auto w-full left-0 z-20 rounded-b-md">
                                                         {filteredProductsToAdd.length > 0 ? (
-                                                            filteredProductsToAdd.map((p) => (
-                                                                <div
-                                                                    key={p.id}
-                                                                    onClick={() => handleAddItem(p)}
-                                                                    className="p-3 hover:bg-blue-50 cursor-pointer text-sm"
-                                                                >
-                                                                    {p.nombre} <span className="text-gray-400">(${p.precio_unitario})</span>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <div className="p-3 text-sm text-gray-500">No se encontraron productos.</div>
-                                                        )}
+                                                            filteredProductsToAdd.map((p) => (<div key={p.id} onClick={() => handleAddItem(p)} className="p-3 hover:bg-blue-50 cursor-pointer text-sm">{p.nombre} <span className="text-gray-400">(${p.precio_unitario})</span></div>))
+                                                        ) : (<div className="p-3 text-sm text-gray-500">No se encontraron productos.</div>)}
                                                     </div>
                                                 )}
                                             </div>
-                                    
-                                            {/* Botones de acción */}
                                             <div className="flex justify-end gap-4">
-                                                <button
-                                                    onClick={() => { setIsEditing(false); fetchAllData(); }}
-                                                    className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg"
-                                                >
-                                                    Cancelar
-                                                </button>
-                                                <button
-                                                    onClick={handleSaveChanges}
-                                                    className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg"
-                                                >
-                                                    Guardar Cambios
-                                                </button>
+                                                <button onClick={() => { setIsEditing(false); fetchAllData(); }} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                                                <button onClick={handleSaveChanges} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Guardar Cambios</button>
                                             </div>
                                         </div>
                                     )}
@@ -1532,3 +1514,4 @@
             );
         }
         
+</contents>
