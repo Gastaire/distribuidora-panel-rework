@@ -20,6 +20,18 @@ const useSortableData = (items, config = null, numericSort = false) => {
                 const valA = a[sortConfig.key];
                 const valB = b[sortConfig.key];
                 
+                // --- INICIO DE LA MODIFICACIÓN: Lógica especial para 'categoria' ---
+                if (sortConfig.key === 'categoria') {
+                    const aHasCategory = valA && valA.trim() !== '';
+                    const bHasCategory = valB && valB.trim() !== '';
+
+                    if (!aHasCategory && bHasCategory) return -1; // 'a' (sin categoría) va primero
+                    if (aHasCategory && !bHasCategory) return 1;  // 'b' (sin categoría) va primero
+                    
+                    // Si ambos tienen o no tienen categoría, se aplica el ordenamiento normal de texto.
+                }
+                // --- FIN DE LA MODIFICACIÓN ---
+
                 // --- Lógica de ordenamiento numérico ---
                 if (numericSort && (sortConfig.key === 'total_monto' || sortConfig.key === 'total_cantidad' || sortConfig.key === 'id')) {
                     const numA = parseFloat(valA);
