@@ -1513,5 +1513,3 @@
                 </React.Fragment>
             );
         }
-        
-</contents>
